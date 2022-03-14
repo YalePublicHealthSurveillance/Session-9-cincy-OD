@@ -1,0 +1,308 @@
+---
+title: "Mapping overdoses in Cincinnati"
+output: html_notebook
+---
+
+Today we will analyze data from the Cincinnati Fire Incidents database. The database is publicly available and can be downloaded here: https://data.cincinnati-oh.gov/Safer-Streets/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp
+
+The city also has a nice graphical interface for mapping and exploring these data. https://insights.cincinnati-oh.gov/stories/s/Heroin-Overdose-Responses/dm3s-ep3u/
+
+These data contain a record of emergency medical service calls, including fires, rescues and other fire department-related services. Our goal will be to examine spatial and spatiotemporal clusters
+
+```{r setup, include=F}
+#install.packages('rgdal')
+#install.packages('raster')
+
+library(lubridate)
+library(rgdal)
+library(raster)
+library(surveillance)
+```
+
+
+```{r}
+
+cin1 <- read.csv('https://data.cincinnati-oh.gov/api/views/vnsz-a3wp/rows.csv?accessType=DOWNLOAD')
+cin1<-readRDS('./Data/cincinnati.rds')
+```
+
+## Let's first have a look at what variables are in the dataset
+```{r}
+names(cin1)
+```
+
+```{r}
+View(cin1)
+```
+
+
+What are the different types of calls in the database?
+```{r}
+sort(
+  table(
+    cin1$CFD_INCIDENT_TYPE_GROUP #what variable are we tabulating?
+    ), 
+  decreasing=T) #biggest to smallest sort
+```
+
+
+## Format the date and time variables
+```{r}
+cin1$CREATE_TIME_INCIDENT<-as.character(cin1$CREATE_TIME_INCIDENT) #convert date-time to a character vector
+```
+
+```{r}
+date_time_list<-    strsplit(cin1$CREATE_TIME_INCIDENT,' ')#split date and time into separate vectors, this is saved as a list
+
+dtparts = do.call(rbind,date_time_list) #combine pieces of list back into a data frame    
+head(dtparts)
+```
+
+```{r}
+cin1$date<-as.Date(dtparts[,1], '%m/%d/%Y') #tell R this is a date with format month/day/year; add it to the cin1 data frame
+```
+
+```{r}
+cin1$weekdate<-floor_date(cin1$date, unit='week') #round date down to nearest Sunday, add it to the cin1 data frame
+```
+
+Pull out the hour of the incidence
+```{r}
+cin1$time<-dtparts[,2]
+cin1$hour<-as.numeric(gsub(":.*", "",cin1$time)) #Extract out the hour of the call
+```
+
+## Let's subset to just the overdose data 
+```{r}
+op1<-cin1[cin1$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',] #pull out rows where incident type is heroin overdose
+```
+
+#Also subset out breathing problem complaints
+We will use this later on for our SATSCAN analysis...
+```{r}
+br1<-cin1[cin1$CFD_INCIDENT_TYPE_GROUP=='BREATHING PROBLEMS',]
+
+```
+
+## distribution of the dates
+```{r}
+hist(op1$date, breaks=98) #histogram with 98 bins
+```
+
+#Look at distribution of overdoses over time
+```{r}
+hist(op1$hour, breaks=24, freq=T) #histogram with 24 breaks. x axis shows hours from 12:01am-11:59pm
+```
+
+## Simple maps
+What we will do here is just make an X-Y plot with latitude on the y axis and longitude on the x axis. For each overdose, we will make a dot. 
+
+```{r, fig.height=5, fig.width=5}
+plot(op1$LONGITUDE_X, #x variable
+     op1$LATITUDE_X , #Y variable
+     pch=16,  #shape of the markers
+     cex=0.5, #size of the marker
+     col='black',  #specify a black marker
+     bty='l')
+```
+
+This is hard to see because there are so many dots. Let's make them partially transparent so that we can see where they are piling up. 
+```{r, fig.height=5, fig.width=5}
+col.plot=rgb(1,0,0,alpha=0.02) #red, with transparency
+plot(op1$LONGITUDE_X, #x variable
+     op1$LATITUDE_X , #Y variable
+     pch=16,  #shape of the markers
+     cex=0.5, #size of the marker
+     col=col.plot,  #specify a transparent red
+     bty='l')
+```
+#Lets add in neighborhood boundaries
+This shows a 'hotspot' in downtown Cincinnatti. Even without doing any fancy statistics we can start to see some patterns
+
+Read in a file that has map coordinates for neighborhood boundaries
+```{r}
+shp.cin<-readRDS( 'cincinnati_neighborhood.map.rds')
+
+```
+
+
+```{r}
+plot(shp.cin, bty='l')
+col.plot=rgb(1,0,0,alpha=0.02) #red, with transparency
+points(op1$LONGITUDE_X, #x variable
+     op1$LATITUDE_X , #Y variable
+     pch=16,  #shape of the markers
+     cex=0.5, #size of the marker
+     col=col.plot  #specify a transparent red
+    )
+```
+
+## As a comparison, let's look at breathing issues
+From this we can see some similarities and some differences with the opiod map
+```{r}
+plot(shp.cin, bty='l')
+col.plot=rgb(0,0,1,alpha=0.02) #blue, with transparency
+points(br1$LONGITUDE_X, #x variable
+     br1$LATITUDE_X , #Y variable
+     pch=16,  #shape of the markers
+     cex=0.5, #size of the marker
+     col=col.plot  #specify a transparent red
+    )
+```
+
+
+## Prepare data for SATSCAN to detect spatiotemporal clusters
+We will run 3 analyses in SATSCAN: 
+1. A purely temporal analysis to look for temporal clusters 
+2. A space-time permutation analysis to look for space-time cluster
+3.A purely spatial analysis using breathing conditions as controls and heroin overdoses as cases. For the purely spatial analysis, because we are using point data, we don't have a population denominator, so a trick is to use a different event (breathing problems) to adjust for spatial variation in population. We perform a 'casecontrol' analysis where we are evaluating the probability of detecting a case vs control in each of the circles.
+What are the advantages and disadvantages of this?
+
+1)Create an identifier for each event This will just be an index variable. We will combine together the heroin overdoses and breathing complaints into a single data frame so that we have unique IDs for all cases and controls.
+```{r}
+all<-rbind.data.frame(op1, br1)
+all$id<-1:nrow(all)
+```
+
+1a) Remove rows withut coordinate data
+```{r}
+all.nomiss<-all[!is.na(all$LATITUDE_X),]
+```
+
+
+2a) create a case file
+```{r}
+op.case<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',c('id','date')]
+write.csv(op.case,'op.case.csv')
+```
+
+2b) create a control file
+```{r}
+br.case<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='BREATHING PROBLEMS',c('id','date')]
+write.csv(br.case,'br.control.csv')
+```
+
+3) create a geo file
+```{r}
+all.geo<-all.nomiss[,c('id',"LATITUDE_X", "LONGITUDE_X"  )]
+write.csv(all.geo,'all.geo.csv')
+
+#output just the opiod coordinates
+op.geo<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',c('id',"LATITUDE_X", "LONGITUDE_X"  )]
+write.csv(op.geo,'op.geo.csv')
+```
+4) Go to SATSCAN and run a space-time permutation analysis
+--Run a purely temporal analysis with op.geo.csv and op.case.csv
+--Run a space-time analysis with op.geo.csv and op.case.csv
+---start date 7-17-2016; end date April 8, 2019 
+--For computation efficiency, might want to change number of simulations from 999 to 99 (analysis tab/advanced options/inference)
+--(Run a Bernoulli case-control analysis with the breathing conditions as controls--pre-run for you because it takes forever... use all.geo.csv, br.control.csv, op.geo.csv)
+
+5a) See results of your space-time permutation analysis here:
+Remember that these are space-time clusters, so hey occur for a distinct point in time, so might not line up perfectly with areas with high incidence on average.
+```{r}
+space.time.shp<- shapefile('./cincinnatti od/cin space time.col.shp')
+plot(space.time.shp, border='blue') #Plot the circles around cluster
+plot(shp.cin,add=T) #Add the borders of neighborhoods
+col.plot=rgb(1,0,0,alpha=0.02) #blue, with transparency
+#Then add the case data
+points(op1$LONGITUDE_X, #x variable
+     op1$LATITUDE_X , #Y variable
+     pch=16,  #shape of the markers
+     cex=0.5, #size of the marker
+     col=col.plot  #specify a transparent red
+    )
+```
+
+5b) See results of the pre-run purely spatial case-control analysis here:
+```{r}
+case.control.shp<- shapefile('./cincinnatti od/cin1.col.shp')
+plot(case.control.shp, border='blue') #Plot the circles around cluster
+plot(shp.cin,add=T) #Add the borders of neighborhoods
+col.plot=rgb(1,0,0,alpha=0.02) #blue, with transparency
+#Then add the case data
+points(op1$LONGITUDE_X, #x variable
+     op1$LATITUDE_X , #Y variable
+     pch=16,  #shape of the markers
+     cex=0.5, #size of the marker
+     col=col.plot  #specify a transparent red
+    )
+```
+
+## Let's also set up a CUSUM algorithm for rapid detection of overdoses
+
+```{r}
+op1$count=1
+op2<- aggregate(op1$count, by=list('date'=op1$date), FUN=sum) #aggregate by day
+#hist(cusum1$x)
+```
+
+Fill time series to ensure all days represented
+```{r}
+dates.present<-unique(op2$date)
+all.days<- cbind.data.frame('date'=seq.Date(from=dates.present[1], to=dates.present[length(dates.present)], by='day'))
+```
+
+merge that full list of days with original data
+```{r}
+op2<-merge(op2, all.days, by='date')
+op2$x[is.na(op2$date)]<-NA
+```
+
+
+How many overdoses per day?
+```{r}
+hist(op2$x)
+median(op2$x)
+```
+create a surveillance object
+```{r}
+op_DP <- create.disProg(
+      week = 1:nrow(op2), #Index of observations
+      observed = op2$x ,
+      state=matrix(0, nrow=nrow(op2), ncol=1),
+      start = c(2015, 26))
+```
+
+```{r}
+time.points.test<-48:nrow(op2)
+```
+
+```{r}
+in.control.mean<-5
+out.of.control.mean<- in.control.mean*2
+
+k.set= (in.control.mean-out.of.control.mean )/(log(in.control.mean)-log(out.of.control.mean))
+k.set.std<- (k.set- in.control.mean)/sqrt(in.control.mean)
+h.set=4
+
+```
+
+```{r}
+cusum1<- algo.cusum(op_DP,
+    control=list(
+      range=time.points.test,
+   k=k.set,
+   h=h.set) 
+)
+plot(cusum1)
+```
+
+##Plot the CUSUM output
+```{r, fig.width=5, fig.height=10}
+#PLOT THE OUTPUT
+par(mfrow=c(3,1))
+plot(op2$x, main='Full time series', bty='l')
+abline(h= k.set )
+
+std.outcome<- (op2$x-mean(op2$x))/sqrt(mean(op2$x))
+plot(std.outcome[time.points.test], bty='l',type='l')
+abline(h= k.set.std )
+title(paste0('Observed data with K=',round(k.set,2)))
+
+plot(cusum1$cusum, type='p', bty='l',pch=16, col=cusum1$alarm+1)
+abline(h= h.set)
+title(paste0('CUSUM statistic with H=', round(h.set,2),' red=ALARM'))
+
+```
+
