@@ -199,9 +199,9 @@ all<-rbind.data.frame(op1, br1)
 all$id<-1:nrow(all)
 ```
 
-1a) Remove rows without coordinate data
+1a) Remove rows without coordinate data, restrict to 2019-2022
 ```{r}
-all.nomiss<-all[!is.na(all$LATITUDE_X),]
+all.nomiss<-all[!is.na(all$LATITUDE_X) & all$date>= '2019-01-01',]
 ```
 
 
@@ -230,8 +230,7 @@ write.csv(op.geo,'./SATSCAN_inputs/op.geo.csv')
 ```
 
 4) Go to SATSCAN and run a space-time permutation analysis
---Run a purely temporal analysis with op.geo.csv and op.case.csv
---Run a space-time analysis with op.geo.csv and op.case.csv
+--Run a space-time permutation analysis with op.geo.csv and op.case.csv
 ---start date 7-17-2016; end date April 8, 2019 
 --For computation efficiency, might want to change number of simulations from 999 to 99 (analysis tab/advanced options/inference)
 --(Run a Bernoulli case-control analysis with the breathing conditions as controls--pre-run for you because it takes forever... use all.geo.csv, br.control.csv, op.geo.csv)
