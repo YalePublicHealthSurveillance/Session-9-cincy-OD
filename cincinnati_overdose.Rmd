@@ -23,6 +23,31 @@ library(shiny)
 source('./R/glrPoisApp.R')
 ```
 
+## First up: Why does harmonic regression work?
+
+It is a bit counterintuitive--we are using (linear) regression but seemingly getting out a prediction that is not a straight line. What gives? It has to do with the fact that what we are plotting is not the same as what we are putting into the regression model.
+
+Let's imagine we have 10 years of monthly data. The number of cases is a function of temperature. When temperature increases, cases increase. These are both plotted below as a function of time.
+```{r}
+set.seed(123)
+t1 <- 1:520
+
+temperature <- 32 + 10*sin(2*pi*t1/52)
+
+cases <-  rpois(520,exp((3+ 2*sin1)))
+
+plot(t1,scale(cases), type='l')
+points(t1, scale(temperature), col='red' , type='l')
+
+```
+
+But when we fit a regression, we are fitting Y~x, in this instance, cases~ temperature. Here we can see that there is a strong correlation between cases and temperature. This relationship is what is being fit with the regression. But when we plot it as a function of time, both X and Y will follow that harmonic shape. With the harmonic regression approach, we use a combination of sine and cosine terms, rather than temperature, to capture this type of variation, but the idea is the same, when the sine/cosine wave increases, cases increase
+
+```{r}
+plot(temperature ,log(cases))
+```
+
+
 
 ```{r}
 
@@ -185,8 +210,11 @@ p3
 
 ## Prepare data for SATSCAN to detect spatiotemporal clusters
 We will run 3 analyses in SATSCAN: 
+
 1. A purely temporal analysis to look for temporal clusters 
+
 2. A space-time permutation analysis to look for space-time cluster
+
 3.A purely spatial analysis using breathing conditions as controls and heroin overdoses as cases. For the purely spatial analysis, because we are using point data, we don't have a population denominator, so a trick is to use a different event (breathing problems) to adjust for spatial variation in population. We perform a 'casecontrol' analysis where we are evaluating the probability of detecting a case vs control in each of the circles.
 
 What are the advantages and disadvantages of this?
