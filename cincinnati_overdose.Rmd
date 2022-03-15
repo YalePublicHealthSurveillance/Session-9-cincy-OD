@@ -14,16 +14,26 @@ These data contain a record of emergency medical service calls, including fires,
 #install.packages('raster')
 
 library(lubridate)
-library(rgdal)
-library(raster)
+library(sf)
 library(surveillance)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(shiny)
+source('./R/glrPoisApp.R')
 ```
 
 
 ```{r}
 
-cin1 <- read.csv('https://data.cincinnati-oh.gov/api/views/vnsz-a3wp/rows.csv?accessType=DOWNLOAD')
-cin1<-readRDS('./Data/cincinnati.rds')
+# cin1 <- read.csv('https://data.cincinnati-oh.gov/api/views/vnsz-a3wp/rows.csv?accessType=DOWNLOAD')
+# 
+# cin1a <- cin1[,c('LATITUDE_X', 'LONGITUDE_X', 'CREATE_TIME_INCIDENT', 'ARRIVAL_TIME_PRIMARY_UNIT', 'CFD_INCIDENT_TYPE_GROUP',"COMMUNITY_COUNCIL_NEIGHBORHOOD")]
+# 
+# saveRDS(cin1a,'./Data/cincinnati.rds')
+
+
+cin1 <- readRDS('./Data/cincinnati.rds')
 ```
 
 ## Let's first have a look at what variables are in the dataset
@@ -51,25 +61,29 @@ sort(
 cin1$CREATE_TIME_INCIDENT<-as.character(cin1$CREATE_TIME_INCIDENT) #convert date-time to a character vector
 ```
 
+Declare "CREATE_TIME_INCIDENT" as a date-time variable
 ```{r}
-date_time_list<-    strsplit(cin1$CREATE_TIME_INCIDENT,' ')#split date and time into separate vectors, this is saved as a list
 
-dtparts = do.call(rbind,date_time_list) #combine pieces of list back into a data frame    
-head(dtparts)
+cin1$datetime <- as.POSIXct(cin1$CREATE_TIME_INCIDENT, format = "%m/%d/%Y %I:%M:%S %p")
 ```
 
+Extract the date from the date-time object
+
 ```{r}
-cin1$date<-as.Date(dtparts[,1], '%m/%d/%Y') #tell R this is a date with format month/day/year; add it to the cin1 data frame
+cin1$date <- as.Date(cin1$datetime)
+
 ```
+
+Round date down to most reent Sunday to group by week
 
 ```{r}
 cin1$weekdate<-floor_date(cin1$date, unit='week') #round date down to nearest Sunday, add it to the cin1 data frame
 ```
 
-Pull out the hour of the incidence
+Pull out the hour of the incident
+
 ```{r}
-cin1$time<-dtparts[,2]
-cin1$hour<-as.numeric(gsub(":.*", "",cin1$time)) #Extract out the hour of the call
+cin1$hour<- hour(cin1$datetime)
 ```
 
 ## Let's subset to just the overdose data 
@@ -106,48 +120,64 @@ plot(op1$LONGITUDE_X, #x variable
      bty='l')
 ```
 
+```{r}
+p1 <- ggplot(op1, aes(x=LONGITUDE_X, y=LATITUDE_X)) +
+  geom_point() +
+  theme_classic()
+
+p1
+```
+
+
 This is hard to see because there are so many dots. Let's make them partially transparent so that we can see where they are piling up. 
 ```{r, fig.height=5, fig.width=5}
 col.plot=rgb(1,0,0,alpha=0.02) #red, with transparency
-plot(op1$LONGITUDE_X, #x variable
-     op1$LATITUDE_X , #Y variable
-     pch=16,  #shape of the markers
-     cex=0.5, #size of the marker
-     col=col.plot,  #specify a transparent red
-     bty='l')
+
+p2 <- ggplot(op1, aes(x=LONGITUDE_X, y=LATITUDE_X)) +
+  geom_point( col=col.plot) +
+  theme_classic()
+
+p2
+
 ```
+
 #Lets add in neighborhood boundaries
 This shows a 'hotspot' in downtown Cincinnatti. Even without doing any fancy statistics we can start to see some patterns
 
-Read in a file that has map coordinates for neighborhood boundaries
+Read in a file that has map coordinates for neighborhood boundaries. This file comes from the Zillow real estate website.
+
+Import the shape file, 'fortify' it so that ggplot can use it,
+
 ```{r}
-shp.cin<-readRDS( 'cincinnati_neighborhood.map.rds')
+shp.cin<-readRDS( './Data/cincinnati_neighborhood.map.rds')
+
+shp.cin2 <-fortify(shp.cin)
 
 ```
 
+Then add the boundaries to the points using geom_polygon()
 
 ```{r}
-plot(shp.cin, bty='l')
-col.plot=rgb(1,0,0,alpha=0.02) #red, with transparency
-points(op1$LONGITUDE_X, #x variable
-     op1$LATITUDE_X , #Y variable
-     pch=16,  #shape of the markers
-     cex=0.5, #size of the marker
-     col=col.plot  #specify a transparent red
-    )
+p2 +
+    geom_polygon(data=shp.cin2, aes(x=long, y=lat, group=group), fill=NA, colour='black', alpha=0) 
 ```
+
+
+
 
 ## As a comparison, let's look at breathing issues
 From this we can see some similarities and some differences with the opiod map
 ```{r}
-plot(shp.cin, bty='l')
-col.plot=rgb(0,0,1,alpha=0.02) #blue, with transparency
-points(br1$LONGITUDE_X, #x variable
-     br1$LATITUDE_X , #Y variable
-     pch=16,  #shape of the markers
-     cex=0.5, #size of the marker
-     col=col.plot  #specify a transparent red
-    )
+
+col.plot2=rgb(0,0,1,alpha=0.02) #blue, with transparency
+
+p3 <- ggplot(br1, aes(x=LONGITUDE_X, y=LATITUDE_X)) +
+  geom_point( col=col.plot2) +
+  theme_classic() +
+  ylim(min=min(shp.cin2$lat), max=max(shp.cin2$lat)) +
+  geom_polygon(data=shp.cin2, aes(x=long, y=lat, group=group), fill=NA, colour='black', alpha=0) 
+
+p3
 ```
 
 
@@ -156,15 +186,18 @@ We will run 3 analyses in SATSCAN:
 1. A purely temporal analysis to look for temporal clusters 
 2. A space-time permutation analysis to look for space-time cluster
 3.A purely spatial analysis using breathing conditions as controls and heroin overdoses as cases. For the purely spatial analysis, because we are using point data, we don't have a population denominator, so a trick is to use a different event (breathing problems) to adjust for spatial variation in population. We perform a 'casecontrol' analysis where we are evaluating the probability of detecting a case vs control in each of the circles.
+
 What are the advantages and disadvantages of this?
 
 1)Create an identifier for each event This will just be an index variable. We will combine together the heroin overdoses and breathing complaints into a single data frame so that we have unique IDs for all cases and controls.
+
 ```{r}
 all<-rbind.data.frame(op1, br1)
+
 all$id<-1:nrow(all)
 ```
 
-1a) Remove rows withut coordinate data
+1a) Remove rows without coordinate data
 ```{r}
 all.nomiss<-all[!is.na(all$LATITUDE_X),]
 ```
@@ -173,13 +206,15 @@ all.nomiss<-all[!is.na(all$LATITUDE_X),]
 2a) create a case file
 ```{r}
 op.case<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',c('id','date')]
-write.csv(op.case,'op.case.csv')
+
+write.csv(op.case,'./SATSCAN_inputs/op.case.csv')
 ```
 
 2b) create a control file
 ```{r}
 br.case<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='BREATHING PROBLEMS',c('id','date')]
-write.csv(br.case,'br.control.csv')
+
+write.csv(br.case,'./SATSCAN_inputs/br.control.csv')
 ```
 
 3) create a geo file
@@ -189,8 +224,9 @@ write.csv(all.geo,'all.geo.csv')
 
 #output just the opiod coordinates
 op.geo<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',c('id',"LATITUDE_X", "LONGITUDE_X"  )]
-write.csv(op.geo,'op.geo.csv')
+write.csv(op.geo,'./SATSCAN_inputs/op.geo.csv')
 ```
+
 4) Go to SATSCAN and run a space-time permutation analysis
 --Run a purely temporal analysis with op.geo.csv and op.case.csv
 --Run a space-time analysis with op.geo.csv and op.case.csv
@@ -200,8 +236,10 @@ write.csv(op.geo,'op.geo.csv')
 
 5a) See results of your space-time permutation analysis here:
 Remember that these are space-time clusters, so hey occur for a distinct point in time, so might not line up perfectly with areas with high incidence on average.
+
 ```{r}
 space.time.shp<- shapefile('./cincinnatti od/cin space time.col.shp')
+
 plot(space.time.shp, border='blue') #Plot the circles around cluster
 plot(shp.cin,add=T) #Add the borders of neighborhoods
 col.plot=rgb(1,0,0,alpha=0.02) #blue, with transparency
@@ -231,78 +269,28 @@ points(op1$LONGITUDE_X, #x variable
 
 ## Let's also set up a CUSUM algorithm for rapid detection of overdoses
 
-```{r}
-op1$count=1
-op2<- aggregate(op1$count, by=list('date'=op1$date), FUN=sum) #aggregate by day
-#hist(cusum1$x)
-```
+First, aggregate by day, and fill missing days with 0s to get a complete time series
 
-Fill time series to ensure all days represented
 ```{r}
-dates.present<-unique(op2$date)
-all.days<- cbind.data.frame('date'=seq.Date(from=dates.present[1], to=dates.present[length(dates.present)], by='day'))
-```
 
-merge that full list of days with original data
-```{r}
-op2<-merge(op2, all.days, by='date')
-op2$x[is.na(op2$date)]<-NA
+op2 <- op1 %>%
+  group_by(date) %>%
+  summarize(N_OD= n()) %>%
+  ungroup() %>%
+  tidyr::complete(date=seq.Date(min(date, na.rm=T), max(date, na.rm=T), 'day'), fill=list(N_OD=0)) #fills 0s 
+
+op2 <- as.data.frame(op2)
 ```
 
 
 How many overdoses per day?
 ```{r}
-hist(op2$x)
-median(op2$x)
+hist(op2$N_OD)
+
+median(op2$N_OD)
 ```
-create a surveillance object
+Note, the model built in assumes the data are weekly when adjusting seasonality. These data aren't really seasonal, but if they were
 ```{r}
-op_DP <- create.disProg(
-      week = 1:nrow(op2), #Index of observations
-      observed = op2$x ,
-      state=matrix(0, nrow=nrow(op2), ncol=1),
-      start = c(2015, 26))
-```
-
-```{r}
-time.points.test<-48:nrow(op2)
-```
-
-```{r}
-in.control.mean<-5
-out.of.control.mean<- in.control.mean*2
-
-k.set= (in.control.mean-out.of.control.mean )/(log(in.control.mean)-log(out.of.control.mean))
-k.set.std<- (k.set- in.control.mean)/sqrt(in.control.mean)
-h.set=4
-
-```
-
-```{r}
-cusum1<- algo.cusum(op_DP,
-    control=list(
-      range=time.points.test,
-   k=k.set,
-   h=h.set) 
-)
-plot(cusum1)
-```
-
-##Plot the CUSUM output
-```{r, fig.width=5, fig.height=10}
-#PLOT THE OUTPUT
-par(mfrow=c(3,1))
-plot(op2$x, main='Full time series', bty='l')
-abline(h= k.set )
-
-std.outcome<- (op2$x-mean(op2$x))/sqrt(mean(op2$x))
-plot(std.outcome[time.points.test], bty='l',type='l')
-abline(h= k.set.std )
-title(paste0('Observed data with K=',round(k.set,2)))
-
-plot(cusum1$cusum, type='p', bty='l',pch=16, col=cusum1$alarm+1)
-abline(h= h.set)
-title(paste0('CUSUM statistic with H=', round(h.set,2),' red=ALARM'))
-
+glrpois_App(ds=op2, datevar='date', casevar='N_OD',n.weeks.train=365*4)
 ```
 
