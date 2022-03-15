@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+
+<name>Cluster 20 Locations</name>
+		<Placemark><name>939</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4743,39.2094,0</coordinates></Point></Placemark>
+		<Placemark><name>57460</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4738,39.2099,0</coordinates></Point></Placemark>
+		<Placemark><name>12656</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4741,39.2102,0</coordinates></Point></Placemark>
+		<Placemark><name>13441</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4731,39.2097,0</coordinates></Point></Placemark>
+		<Placemark><name>19035</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4756,39.21,0</coordinates></Point></Placemark>
+		<Placemark><name>1385</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4736,39.2105,0</coordinates></Point></Placemark>
+		<Placemark><name>20219</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4733,39.2083,0</coordinates></Point></Placemark>
+		<Placemark><name>1946</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4733,39.2082,0</coordinates></Point></Placemark>
+		<Placemark><name>56741</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4729,39.2104,0</coordinates></Point></Placemark>
+		<Placemark><name>57461</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4722,39.2092,0</coordinates></Point></Placemark>
+		<Placemark><name>1412</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.474,39.211,0</coordinates></Point></Placemark>
+		<Placemark><name>1937</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4739,39.2078,0</coordinates></Point></Placemark>
+		<Placemark><name>830</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4725,39.2085,0</coordinates></Point></Placemark>
+		<Placemark><name>1245</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4721,39.209,0</coordinates></Point></Placemark>
+		<Placemark><name>24626</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4718,39.2103,0</coordinates></Point></Placemark>
+		<Placemark><name>1383</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4753,39.2113,0</coordinates></Point></Placemark>
+		<Placemark><name>1888</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4732,39.2116,0</coordinates></Point></Placemark>
+		<Placemark><name>11424</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4741,39.2118,0</coordinates></Point></Placemark>
+		<Placemark><name>2463</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4715,39.2084,0</coordinates></Point></Placemark>
+</Document>
+</kml>

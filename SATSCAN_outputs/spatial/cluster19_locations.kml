@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+
+<name>Cluster 19 Locations</name>
+		<Placemark><name>805</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5307,39.2061,0</coordinates></Point></Placemark>
+		<Placemark><name>1166</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5311,39.2057,0</coordinates></Point></Placemark>
+		<Placemark><name>570</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5305,39.2068,0</coordinates></Point></Placemark>
+		<Placemark><name>11471</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5303,39.2068,0</coordinates></Point></Placemark>
+		<Placemark><name>2131</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5305,39.2051,0</coordinates></Point></Placemark>
+</Document>
+</kml>

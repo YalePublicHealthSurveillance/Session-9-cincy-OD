@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+
+<name>Cluster 17 Locations</name>
+		<Placemark><name>3310</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5717,39.1933,0</coordinates></Point></Placemark>
+		<Placemark><name>2572</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.572,39.1933,0</coordinates></Point></Placemark>
+		<Placemark><name>2872</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5723,39.1937,0</coordinates></Point></Placemark>
+		<Placemark><name>449</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.572,39.1926,0</coordinates></Point></Placemark>
+		<Placemark><name>927</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.5725,39.1929,0</coordinates></Point></Placemark>
+</Document>
+</kml>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+
+<name>Cluster 16 Locations</name>
+		<Placemark><name>2792</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4103,39.1143,0</coordinates></Point></Placemark>
+		<Placemark><name>3305</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4146,39.1179,0</coordinates></Point></Placemark>
+		<Placemark><name>2935</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4151,39.1179,0</coordinates></Point></Placemark>
+		<Placemark><name>3241</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4144,39.1185,0</coordinates></Point></Placemark>
+		<Placemark><name>3408</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4153,39.1179,0</coordinates></Point></Placemark>
+		<Placemark><name>3046</name><visibility>0</visibility><description></description><styleUrl>space.kml#high-rate-placemark</styleUrl><Point><coordinates>-84.4145,39.1189,0</coordinates></Point></Placemark>
+</Document>
+</kml>
