@@ -58,7 +58,7 @@ sort(
 
 ## Format the date and time variables
 ```{r}
-cin1$CREATE_TIME_INCIDENT<-as.character(cin1$CREATE_TIME_INCIDENT) #convert date-time to a character vector
+cin1$CREATE_TIME_INCIDENT <- as.character(cin1$CREATE_TIME_INCIDENT) #convert date-time to a character vector
 ```
 
 Declare "CREATE_TIME_INCIDENT" as a date-time variable
@@ -77,22 +77,24 @@ cin1$date <- as.Date(cin1$datetime)
 Round date down to most reent Sunday to group by week
 
 ```{r}
-cin1$weekdate<-floor_date(cin1$date, unit='week') #round date down to nearest Sunday, add it to the cin1 data frame
+cin1$weekdate <- floor_date(cin1$date, unit='week') #round date down to nearest Sunday, add it to the cin1 data frame
 ```
 
 Pull out the hour of the incident
 
 ```{r}
-cin1$hour<- hour(cin1$datetime)
+cin1$hour <- hour(cin1$datetime)
 ```
 
 ## Let's subset to just the overdose data 
+
 ```{r}
-op1<-cin1[cin1$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',] #pull out rows where incident type is heroin overdose
+op1 <- cin1[cin1$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',] #pull out rows where incident type is heroin overdose
 ```
 
 #Also subset out breathing problem complaints
 We will use this later on for our SATSCAN analysis...
+
 ```{r}
 br1<-cin1[cin1$CFD_INCIDENT_TYPE_GROUP=='BREATHING PROBLEMS',]
 
@@ -293,4 +295,3 @@ Note, the model built in assumes the data are weekly when adjusting seasonality.
 ```{r}
 glrpois_App(ds=op2, datevar='date', casevar='N_OD',n.weeks.train=365*4)
 ```
-
