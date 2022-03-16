@@ -1,6 +1,6 @@
 ---
 title: "Mapping overdoses in Cincinnati"
-output: html_notebook
+output: html_document
 ---
 
 Today we will analyze data from the Cincinnati Fire Incidents database. The database is publicly available and can be downloaded here: https://data.cincinnati-oh.gov/Safer-Streets/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp
@@ -34,7 +34,7 @@ t1 <- 1:520
 
 temperature <- 32 + 10*sin(2*pi*t1/52)
 
-cases <-  rpois(520,exp((3+ 2*sin1)))
+cases <-  rpois(520,exp((1+ 0.1*temperature)))
 
 plot(t1,scale(cases), type='l')
 points(t1, scale(temperature), col='red' , type='l')
@@ -138,16 +138,8 @@ hist(op1$hour, breaks=24, freq=T) #histogram with 24 breaks. x axis shows hours 
 ## Simple maps
 What we will do here is just make an X-Y plot with latitude on the y axis and longitude on the x axis. For each overdose, we will make a dot. 
 
-```{r, fig.height=5, fig.width=5}
-plot(op1$LONGITUDE_X, #x variable
-     op1$LATITUDE_X , #Y variable
-     pch=16,  #shape of the markers
-     cex=0.5, #size of the marker
-     col='black',  #specify a black marker
-     bty='l')
-```
 
-```{r}
+```{r, fig.height=5, fig.width=5}
 p1 <- ggplot(op1, aes(x=LONGITUDE_X, y=LATITUDE_X)) +
   geom_point() +
   theme_classic()
@@ -184,7 +176,7 @@ shp.cin2 <-fortify(shp.cin)
 
 Then add the boundaries to the points using geom_polygon()
 
-```{r}
+```{r, fig.height=5, fig.width=5}
 p2 +
     geom_polygon(data=shp.cin2, aes(x=long, y=lat, group=group), fill=NA, colour='black', alpha=0) 
 ```
@@ -194,7 +186,7 @@ p2 +
 
 ## As a comparison, let's look at breathing issues
 From this we can see some similarities and some differences with the opiod map
-```{r}
+```{r, fig.height=5, fig.width=5}
 
 col.plot2=rgb(0,0,1,alpha=0.02) #blue, with transparency
 
