@@ -19,6 +19,8 @@ library(surveillance)
 library(tidyr)
 library(ggplot2)
 library(dplyr)
+library(rgdal)
+library(raster)
 library(shiny)
 source('./R/glrPoisApp.R')
 ```
