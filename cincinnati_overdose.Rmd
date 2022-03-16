@@ -253,7 +253,7 @@ all.geo<-all.nomiss[,c('id',"LATITUDE_X", "LONGITUDE_X"  )]
 write.csv(all.geo,'all.geo.csv')
 
 #output just the opiod coordinates
-op.geo<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP=='HEROIN OVERDOSE',c('id',"LATITUDE_X", "LONGITUDE_X"  )]
+op.geo<-all.nomiss[all.nomiss$CFD_INCIDENT_TYPE_GROUP %in% c('HEROIN OVERDOSE','BREATHING PROBLEMS'),c('id',"LATITUDE_X", "LONGITUDE_X"  )]
 write.csv(op.geo,'./SATSCAN_inputs/op.geo.csv')
 ```
 
@@ -267,34 +267,28 @@ write.csv(op.geo,'./SATSCAN_inputs/op.geo.csv')
 Remember that these are space-time clusters, so hey occur for a distinct point in time, so might not line up perfectly with areas with high incidence on average.
 
 ```{r}
-space.time.shp<- shapefile('./cincinnatti od/cin space time.col.shp')
+space.time.shp<- shapefile('./SATSCAN_outputs/space_time_permutation/cin space time.col.shp')
 
-plot(space.time.shp, border='blue') #Plot the circles around cluster
-plot(shp.cin,add=T) #Add the borders of neighborhoods
-col.plot=rgb(1,0,0,alpha=0.02) #blue, with transparency
-#Then add the case data
-points(op1$LONGITUDE_X, #x variable
-     op1$LATITUDE_X , #Y variable
-     pch=16,  #shape of the markers
-     cex=0.5, #size of the marker
-     col=col.plot  #specify a transparent red
-    )
+space.time.shp <- fortify(space.time.shp)
+
+p2 +
+  geom_polygon(data=shp.cin2, aes(x=long, y=lat, group=group), fill=NA, colour='gray', alpha=0) + 
+  geom_polygon(data=space.time.shp[space.time.shp$group %in% c('0.1','1.1', '2.1'),], aes(x=long, y=lat, group=group), fill=NA, colour='black', alpha=0) 
+
 ```
 
 5b) See results of the pre-run purely spatial case-control analysis here:
 ```{r}
-case.control.shp<- shapefile('./cincinnatti od/cin1.col.shp')
-plot(case.control.shp, border='blue') #Plot the circles around cluster
-plot(shp.cin,add=T) #Add the borders of neighborhoods
-col.plot=rgb(1,0,0,alpha=0.02) #blue, with transparency
-#Then add the case data
-points(op1$LONGITUDE_X, #x variable
-     op1$LATITUDE_X , #Y variable
-     pch=16,  #shape of the markers
-     cex=0.5, #size of the marker
-     col=col.plot  #specify a transparent red
-    )
+case.control.shp<- shapefile('./SATSCAN_outputs/spatial/space.col.shp')
+
+case.control.shp <- fortify(case.control.shp)
+
+p2 +
+  geom_polygon(data=shp.cin2, aes(x=long, y=lat, group=group), fill=NA, colour='gray', alpha=0) + 
+  geom_polygon(data=case.control.shp[case.control.shp$group %in% c('0.1'),], aes(x=long, y=lat, group=group), fill=NA, colour='black', alpha=0) 
 ```
+
+
 
 ## Let's also set up a CUSUM algorithm for rapid detection of overdoses
 
